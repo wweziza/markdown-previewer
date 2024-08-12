@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -54,8 +54,35 @@ And here. | Okay. | I think we get it.
 const Page: React.FC = () => {
   const [editorText, setEditorText] = useState(defaultMarkdown);
 
+  const components: Components = {
+    code: ({ node, inline, className, children, ...props }: any) => {
+      const match = /language-(\w+)/.exec(className || '');
+      return !inline && match ? (
+        <SyntaxHighlighter
+          style={atomDark}
+          language={match[1]}
+          PreTag="div"
+          {...props}
+        >
+          {String(children).replace(/\n$/, '')}
+        </SyntaxHighlighter>
+      ) : (
+        <code className={styles.inlineCode} {...props}>
+          {children}
+        </code>
+      );
+    },
+    blockquote: (props) => <blockquote className={styles.blockquote} {...props} />,
+    table: (props) => <table className={styles.table} {...props} />,
+    img: (props) => <img className={styles.image} {...props} alt="Markdown content" />,
+    a: (props) => <a className={styles.link} target="_blank" rel="noopener noreferrer" {...props} />,
+    ul: (props) => <ul className={styles.list} {...props} />,
+    ol: (props) => <ol className={styles.list} {...props} />,
+  };
+
   return (
     <div className={styles.container}>
+      <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Fira+Code&display=swap" rel="stylesheet"></link>
       <header className={styles.header}>
         <h1>Markdown Previewer</h1>
       </header>
@@ -73,37 +100,13 @@ const Page: React.FC = () => {
         <ReactMarkdown
           className={styles.preview}
           remarkPlugins={[remarkGfm]}
-          components={{
-            code({node, inline, className, children, ...props}) {
-              const match = /language-(\w+)/.exec(className || '')
-              return !inline && match ? (
-                <SyntaxHighlighter
-                  style={atomDark}
-                  language={match[1]}
-                  PreTag="div"
-                  {...props}
-                >
-                  {String(children).replace(/\n$/, '')}
-                </SyntaxHighlighter>
-              ) : (
-                <code className={styles.inlineCode} {...props}>
-                  {children}
-                </code>
-              )
-            },
-            blockquote: ({node, ...props}) => <blockquote className={styles.blockquote} {...props} />,
-            table: ({node, ...props}) => <table className={styles.table} {...props} />,
-            img: ({node, ...props}) => <img className={styles.image} {...props} alt="Markdown content" />,
-            a: ({node, ...props}) => <a className={styles.link} target="_blank" rel="noopener noreferrer" {...props} />,
-            ul: ({node, ...props}) => <ul className={styles.list} {...props} />,
-            ol: ({node, ...props}) => <ol className={styles.list} {...props} />,
-          }}
+          components={components}
         >
           {editorText}
         </ReactMarkdown>
       </div>
       <footer className={styles.footer}>
-        Created by <a href="https://github.com/wweziza" target="_blank" rel="noopener noreferrer">wweziza</a>
+        Created by <a href="https://github.com/wweziza/markdown-previewer" target="_blank" rel="noopener noreferrer">wweziza</a>
       </footer>
     </div>
   );
